@@ -35,5 +35,5 @@
 .DS_Store
 
 # game files
-./2084
+2048
 scores.txt
