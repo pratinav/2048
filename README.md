@@ -3,6 +3,15 @@
 A text-based C++ clone of the popular game [2048](http://gabrielecirulli.github.io/2048/), originally by [Gabriele Cirulli](https://gabrielecirulli.com).
 
 
+## Download and Installation
+
+- Download the code
+
+- Run `make` to compile the source code
+
+- Run `./2048` to run the executable
+
+
 ## How To Play
 
 - 'up' or 'u' to move the tiles up
