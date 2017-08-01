@@ -1,5 +1,5 @@
 /**
- * CSCI-S38 Final Project
+ * Final Project
  * author: Pratinav Bagla
  *
  * board.h

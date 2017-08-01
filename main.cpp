@@ -1,5 +1,5 @@
 /**
- * CSCI-S38 Final Project
+ * Final Project
  * author: Pratinav Bagla
  *
  * main.cpp
@@ -15,6 +15,7 @@ const string MENU_COMMANDS[NUM_MENU_COMMANDS] = { "play", "load", "scores", "qui
 const int NUM_GAME_COMMANDS = 14;
 const string GAME_COMMANDS[] = { "up", "u", "down", "d", "left", "l", "right", "r", "save", "s", "quit", "q", "reset", "help"};
 vector<int> scores;
+ofstream scoreFile;
 
 int main()
 {
@@ -22,6 +23,12 @@ int main()
   bool flag;
   int index;
   loadScores();
+
+  // open scoreFile in append mode for writing scores
+  scoreFile.open("scores.txt", ofstream::app);
+  if (scoreFile.fail())
+    cout << "Could not open score file. Scores for this session will not be saved." << endl;
+
   displayMenu();
   while (true)
   {
@@ -142,15 +149,19 @@ void play(board *b)
 
       case 10: // quit, q
       case 11:
+        // ask the user if they want to save the game before quitting
         cout << "Save game? (y/n): ";
         cin >> input;
+
+        // if there was an error saving the game, confirm if the user
+        // still wants to quit
         if (input == "y" && !saveGame(b))
         {
-          cout << "Error saving game. Continue to quit? (y/n): ";
+          cout << "Continue to quit? (y/n): ";
           cin >> input;
-          if (input == "y")
-            return;
-          break;
+
+          if (input != "y")
+            break;
         }
         return;
 
@@ -159,6 +170,7 @@ void play(board *b)
         break;
 
       case 13: // help
+        cout << endl;
         displayMenu();
         break;
 
@@ -171,9 +183,14 @@ void play(board *b)
 
   } while (!b -> isGameOver()); // exit once game is over
 
+  // print out the final score and baord
   cout << endl << *b << "Game Over!" << endl;
+
+  // tell the user if it was a new highscore
   if (scores.size() > 0 && scores.back() < b -> getScore())
     cout << "New highscore!" << endl;
+
+  // add the score to the scores vector, also display the current highscore
   pushNewScore(b -> getScore());
   cout << "Highscore: " << scores.back() << endl;
 
@@ -197,7 +214,7 @@ void loadScores()
     if (line != "") // in case a stray empty line is left out
       scores.push_back(stoi(line));
 
-  bubbleSort(scores);
+  bubbleSort(scores); // sort the scores vector
 }
 
 /**
@@ -205,12 +222,22 @@ void loadScores()
  */
 bool saveGame(board *b)
 {
+  // get save file path from user
   string path;
   cin.ignore();
   cout << "Enter save file name/path (without extension): "; // a .txt extension will be added regardless
   getline(cin, path);
   path += ".txt";
-  return b -> save(path);
+
+  // if the save was successful, tell the user and return true
+  if (b -> save(path))
+  {
+    cout << "The game was saved at " << path << endl;
+    return true;
+  }
+
+  // else return false
+  return false;
 }
 
 /**
@@ -218,10 +245,13 @@ bool saveGame(board *b)
  */
 void loadGame()
 {
+  // get save file path from user
   string path;
   cin.ignore();
   cout << "Enter save file path (with extension): ";
   getline(cin, path);
+
+  // allocate a new board, loading it from the given path
   board *b = new board(path);
   if (!b)
   {
@@ -229,16 +259,17 @@ void loadGame()
     return;
   }
 
+  // if the board was loaded successfully, play it
   if (!b -> fail())
     play(b);
 }
 
 /**
- * bubble sorts the vector<int> passed by reference
+ * bubble sorts the vector<int> passed to it by reference
  */
 void bubbleSort(vector<int> &v)
 {
-  // if the vector is smaller than 2, we don't need to sort it
+  // if the vector has less than 2 ints, we don't need to sort it
   if (v.size() < 2)
     return;
 
@@ -259,8 +290,8 @@ void bubbleSort(vector<int> &v)
         *x = temp;
       }
     }
-    end--;
-  } while (flag);
+    end--; // keep deducting one from the end as we bubble the largest int up
+  } while (flag); // if there are no swaps in the entire iteration, it must be sorted
 }
 
 /**
@@ -268,16 +299,12 @@ void bubbleSort(vector<int> &v)
  */
 void pushNewScore(int newScore)
 {
-  // open scoreFile in an ofstream for writing scores
-  ofstream scoreFile("scores.txt", std::ios_base::app);
+  // write score to score file, if it's open
+  if (scoreFile.is_open())
+    scoreFile << newScore << endl;
 
-  if (scoreFile.fail())
-    cout << "Could not open score file for writing. Scores in this sesion will not be saved to file." << endl;
-  else
-    scoreFile << newScore << '\n';
-
-  // if the scores vector is empty, or the new score being pushed is
-  // greater than or equal to the last score in the vector, insert it at the end
+  // if the scores vector is empty, or the new score being pushed is greater than
+  // or equal to the last score in the vector, insert it at the end
   int lastIndex = scores.size() - 1;
   if (lastIndex == -1 || newScore >= scores.back())
   {
@@ -293,7 +320,7 @@ void pushNewScore(int newScore)
     return;
   }
 
-  // find the right index to insert the new score into
+  // else, find the right index to insert the new score into
   int index = 0;
   for ( ; index < lastIndex; index++)
   {
@@ -306,7 +333,7 @@ void pushNewScore(int newScore)
 }
 
 /**
- * displays menu
+ * displays menu/help prompt
  */
 void displayMenu()
 {
@@ -341,7 +368,7 @@ void displayScores()
   }
 
   cout << endl << "Score table" << endl;
-  // iterate through the vector of scores
+  // iterate through the vector of scores and print them out in descending order
   for (int *begin = scores.data(), *x = begin + len - 1, c = 1; x >= begin; x--, c++)
     cout << c << ". " << *x << endl;
 }
@@ -356,5 +383,6 @@ int getIndex(string s, const string ARR[], const int ARR_LEN)
     if (s == ARR[x])
       return x;
   }
-  return -1;
+
+  return -1; // if s was not found in ARR, return -1
 }

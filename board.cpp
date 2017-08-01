@@ -1,5 +1,5 @@
 /**
- * CSCI-S38 Final Project
+ * Final Project
  * author: Pratinav Bagla
  *
  * board.cpp
@@ -53,6 +53,7 @@ board::board(const board &b)
 
     colWidth[x] = b.colWidth[x];
   }
+  _fail = b._fail;
 }
 
 /**
@@ -61,6 +62,7 @@ board::board(const board &b)
 void board::reset()
 {
   score = 0;
+  _fail = false;
 
   // initialize all grid elements to 0
   for (int y = 0; y < NUM_ROWS; y++)
@@ -224,16 +226,6 @@ void board::display(ostream &out)
 }
 
 /**
- * overloads the << operator to print out score and board
- */
-ostream & operator << (ostream &out, board &b)
-{
-  out << "Score: " << b.getScore() << endl;
-  b.display(out);
-  return out;
-}
-
-/**
  * Helper function for board::display()
  * prints top/bottom border (assuming all column widths are correct)
  */
@@ -250,6 +242,16 @@ void board::printBorder()
       cout << '-';
   }
   cout << '+' << endl;
+}
+
+/**
+ * overloads the << operator to print out score and board
+ */
+ostream & operator << (ostream &out, board &b)
+{
+  out << "Score: " << b.getScore() << endl;
+  b.display(out);
+  return out;
 }
 
 /**
@@ -278,7 +280,8 @@ void board::updateColWidth(int colIndex)
 }
 
 /**
- * updates the column index of the specified column according to num
+ * checks if num exceeds the column width of colIndex, and updates
+ * its column width accordingly
  */
 void board::updateColWidth(int colIndex, int num)
 {
@@ -289,9 +292,6 @@ void board::updateColWidth(int colIndex, int num)
 
 /**
  * Used to move tile y to tile x
- * Merges tiles or simply moves them dynamically
- *
- * use this method if both tiles are in the same column
  */
 void board::moveTile(int &x, int &y, int xColIndex, int yColIndex)
 {
@@ -307,10 +307,10 @@ void board::moveTile(int &x, int &y, int xColIndex, int yColIndex)
   }
   y = 0;
 
-  // check if x is now wider than the column width of x's column
-  // if it is, update x's column's width
+  // update x's column's width
   updateColWidth(xColIndex, x);
 
+  // if y is in a different column, update y's column width as well
   if (yColIndex != -1 && xColIndex != yColIndex)
     updateColWidth(yColIndex);
 }
@@ -329,7 +329,7 @@ bool board::moveUp()
     {
       if (grid[y][x] == 0) continue; // if tile is empty, don't do anything
 
-      int nextY = y; // calculate the last empty row/column in that direction
+      int nextY = y; // calculate the last empty non-edge tile in that direction
       while (nextY > 1 && grid[nextY - 1][x] == 0)
         nextY--;
 
@@ -339,6 +339,8 @@ bool board::moveUp()
         moveTile(grid[nextY - 1][x], grid[y][x], x);
 
         // in case there is a merge, there can be a possibility of further merging
+        // so set index to one less than the merged tile's index, so we are at
+        // the merged tile's index in the next iteration
         if (nextY > 1)
           y = nextY - 2;
 
@@ -378,7 +380,7 @@ bool board::moveDown()
     {
       if (grid[y][x] == 0) continue; // if tile is empty, don't do anything
 
-      int nextY = y; // calculate the last empty row/column in that direction
+      int nextY = y; // calculate the last empty non-edge tile in that direction
       while (nextY < (NUM_ROWS - 2) && grid[nextY + 1][x] == 0)
         nextY++;
 
@@ -388,6 +390,8 @@ bool board::moveDown()
         moveTile(grid[nextY + 1][x], grid[y][x], x);
 
         // in case there is a merge, there can be a possibility of further merging
+        // so set index to one less than the merged tile's index, so we are at
+        // the merged tile's index in the next iteration
         if (nextY < (NUM_ROWS - 2))
           y = nextY + 2;
 
@@ -427,7 +431,7 @@ bool board::moveLeft()
     {
       if (grid[y][x] == 0) continue; // if tile is empty, don't do anything
 
-      int nextX = x; // calculate the last empty row/column in that direction
+      int nextX = x; // calculate the last empty non-edge tile in that direction
       while (nextX > 1 && grid[y][nextX - 1] == 0)
         nextX--;
 
@@ -437,6 +441,8 @@ bool board::moveLeft()
         moveTile(grid[y][nextX - 1], grid[y][x], nextX - 1, x);
 
         // in case there is a merge, there can be a possibility of further merging
+        // so set index to one less than the merged tile's index, so we are at
+        // the merged tile's index in the next iteration
         if (nextX > 1)
           x = nextX - 2;
 
@@ -476,7 +482,7 @@ bool board::moveRight()
     {
       if (grid[y][x] == 0) continue; // if tile is empty, don't do anything
 
-      int nextX = x; // calculate the last empty row/column in that direction
+      int nextX = x; // calculate the last empty non-edge tile in that direction
       while (nextX < (NUM_COLS - 2) && grid[y][nextX + 1] == 0)
         nextX++;
 
@@ -486,6 +492,8 @@ bool board::moveRight()
         moveTile(grid[y][nextX + 1], grid[y][x], nextX + 1, x);
 
         // in case there is a merge, there can be a possibility of further merging
+        // so set index to one less than the merged tile's index, so we are at
+        // the merged tile's index in the next iteration
         if (nextX < NUM_COLS - 2)
           x = nextX + 2;
 
