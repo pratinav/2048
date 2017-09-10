@@ -191,7 +191,8 @@ void play(board *b)
     cout << "New highscore!" << endl;
 
   // add the score to the scores vector, also display the current highscore
-  pushNewScore(b -> getScore());
+  if (b -> getScore() > 0)
+    pushNewScore(b -> getScore());
   cout << "Highscore: " << scores.back() << endl;
 
   delete b;
@@ -299,6 +300,9 @@ void bubbleSort(vector<int> &v)
  */
 void pushNewScore(int newScore)
 {
+  if (newScore <= 0)
+    return;
+  
   // write score to score file, if it's open
   if (scoreFile.is_open())
     scoreFile << newScore << endl;
